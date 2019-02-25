@@ -10,4 +10,7 @@
   - irrlevat
 - water quality vs quality group
   - graph together to see patterns
-- 
+
+
+
+added some stuff
