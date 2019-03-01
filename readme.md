@@ -1,16 +1,26 @@
-# ML Proj
+# ML Proj Tasks
 
-## Data cleaning notes - hatem
+## Data prep
+
+### DONE
+
+- contstruction year => binning
+- scheme name
+  - irrelevant - elimanated
+
+### Not tackled yet
 
 - region and region code
-  - doesn't have the sae amount of categories
-- contstruction year
+  - doesn't have the same amount of categories
 - amount_tsh
-- scheme name 
-  - irrlevat
+  - Lots os zeroes - doesn't make sense because if it's functional it can't have 0 "amount of water available to the water point"
+  - Impute the `functional/functional needs repair` zeroes with the median of the other amount_tsh that are functional (REVIEW FOR OVERFITTING)
 - water quality vs quality group
   - graph together to see patterns
+- water point type / water point type group
+- extraction type / extraction type group / extraction class
 
 
+## DevOps
 
-added some stuff
+- Set up AWS (Jupyter/Git integrations)
