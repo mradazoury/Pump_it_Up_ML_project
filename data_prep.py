@@ -1,3 +1,7 @@
+import pandas as pd
+import datetime
+now = datetime.datetime.now()
+
 """
 Copies `status_group` from train_labels to train_data
 
@@ -20,9 +24,10 @@ train_data = prepareCols(train_data)
 test_data = prepareCols(test_data)
 """
 def prepareCols(data):
-    data = data.drop(columns=['id', 'recorded_by', 'scheme_name', 'ward', 'wpt_name', 'subvillage'])
-    assert (not bool(set(['id', 'recorded_by', 'scheme_name', 'ward', 'wpt_name', 'subvillage']) & set(data.columns)))
-    print("['id', 'recorded_by', 'scheme_name', 'ward', 'wpt_name', 'subvillage'] removed from dataset \n")
+    toDrop = ['id', 'recorded_by', 'scheme_name', 'ward', 'wpt_name', 'subvillage', 'waterpoint_type_group']
+    data = data.drop(columns=toDrop)
+    assert (not bool(set(toDrop) & set(data.columns)))
+    print("{} removed from dataset \n".format(toDrop))
     return data
 
 """
@@ -95,7 +100,70 @@ def convert_construction_year(dataset):
         else:
             return x
 
-    dataset.construction_year = dataset.construction_year.map(year_convert)
-    assert(max(dataset.construction_year) < 100)
-    print("`construction_year` converted to elapsed years (zeroes ignored) \n")
+    dataset['age'] = dataset.construction_year.map(year_convert)
+    dataset = dataset.drop(columns=["construction_year"])
+    assert(max(dataset.age) < 100)
+    assert (not bool(set(["construction_year"]) & set(dataset.columns)))
+    print("`construction_year` converted to `age`, which is elapsed years (zeroes ignored) \n")
     return dataset
+
+
+"""
+date_recorded - converts it to days elapsed
+
+Usage:
+dataset = convert_date_recorded(dataset)
+"""
+def convert_date_recorded(dataset):
+    def day_convert(x):
+        if x != 0:
+            return (now - pd.to_datetime(x)).days
+        else:
+            return x
+
+    dataset["days_since_recoreded"] = dataset.date_recorded.map(day_convert)
+    dataset = dataset.drop(columns=["date_recorded"])
+    assert (not bool(set(["date_recorded"]) & set(dataset.columns)))
+    print("`date_recorded` converted to `days_since_recoreded`, which is elapsed days (zeroes ignored) \n")
+    return dataset
+
+"""
+bin_feature - bins a feature with certain ranges
+
+Usage:
+dataset = bin_feature(dataset, feature, bins)
+"""
+def bin_feature(dataset, feature, bins):
+    dataset[feature] = pd.cut(dataset[feature] , bins)
+    print("`{}` has been binned to {} categories:".format(feature, bins))
+    print(dataset[feature].unique().categories)
+    print("\n")
+    return dataset
+
+
+def reverse_geocode(latlng):
+    result = {}
+    url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng={}'
+    request = url.format(latlng)
+    data = requests.get(request).json()
+    if len(data['results']) > 0:
+        result = data['results'][0]
+    return result
+
+def numerical_features(df):
+    columns = df.columns
+    return df._get_numeric_data().columns
+
+def categorical_features(df):
+    numerical_columns = numerical_features(df)
+    return(list(set(df.columns) - set(numerical_columns)))
+
+def onehot_encode(df):
+    numericals = df.get(numerical_features(df))
+    new_df = numericals.copy()
+    for categorical_column in categorical_features(df):
+        new_df = pd.concat([new_df, 
+                            pd.get_dummies(df[categorical_column], 
+                                           prefix=categorical_column)], 
+                           axis=1)
+    return new_df

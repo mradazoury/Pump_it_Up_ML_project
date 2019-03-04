@@ -14,20 +14,21 @@
 
 ### Not tackled yet (Feature Engineering)
 
-- region and region code
-  - doesn't have the same amount of categories
+- * region and region code - Do Nothing
 - amount_tsh
   - Lots os zeroes - doesn't make sense because if it's functional it can't have 0 "amount of water available to the water point"
   - Impute the `functional/functional needs repair` zeroes with the median of the other amount_tsh that are functional (REVIEW FOR OVERFITTING) - Rafa
-- water quality vs quality group
-  - graph together to see patterns
-- water point type / water point type group
-- extraction type / extraction type group / extraction class
+- gps height lots of zeroes
+- population lots of zeroes
+- * water quality vs quality group - Do Nothing
+- * water point type / water point type group - Drop waterpoint_type_group
+- * extraction type / extraction type group / extraction class - Do Nothing
 - Map long/lat with region/city name
+- public meeting NaN
 
 ## DevOps
 
-- Set up AWS (Jupyter/Git integrations)
+- Set up AWS (Jupyter/Git integrations) - Expensive
 
 ## Modeling
 
