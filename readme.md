@@ -25,10 +25,11 @@
 - * extraction type / extraction type group / extraction class - Do Nothing
 - Map long/lat with region/city name
 - public meeting NaN
+- Make sure after shortlisting and hot encoding that all columns exist
 
 ## DevOps
 
-- Set up AWS (Jupyter/Git integrations) - Expensive
+- Set up AWS (Jupyter/Git integrations) - Went with Google Cloud
 
 ## Modeling
 
