@@ -30,7 +30,7 @@
 
 - Set up AWS (Jupyter/Git integrations) - Went with Google Cloud
 
-# Clear predactors suggestion
+## Clear predactors suggestion - idea
 
 in 2nd level of stacking add the columns that are CLEAR classifiers to the dataset
 
