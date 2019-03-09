@@ -1,6 +1,43 @@
 import pandas as pd
 import numpy as np
 import math as m
+import matplotlib as plt
+import seaborn as sns
+import sklearn as skl
+import warnings
+import statsmodels.api as sm
+
+from sklearn import datasets, linear_model
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split, KFold, GridSearchCV
+from sklearn.model_selection import cross_val_score, cross_val_predict, ShuffleSplit, validation_curve, cross_validate
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import LabelBinarizer, RobustScaler, LabelEncoder, scale, MinMaxScaler, PolynomialFeatures
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.metrics import accuracy_score, classification_report, roc_curve, roc_auc_score, confusion_matrix
+from sklearn.decomposition import PCA
+from sklearn import datasets
+from sklearn.feature_selection import RFE,SelectFromModel
+
+from sklearn.ensemble import RandomForestClassifier as RFC
+from sklearn.datasets import make_classification
+
+from xgboost import XGBClassifier 
+
+from scipy.stats import skew, boxcox_normmax
+from scipy.special import boxcox1p
+
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+import math as m
+import requests
+
+warnings.filterwarnings('ignore')
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=DeprecationWarning)
+warnings.simplefilter('ignore')
+
 
 import datetime
 now = datetime.datetime.now()
@@ -27,7 +64,7 @@ train_data = prepareCols(train_data)
 test_data = prepareCols(test_data)
 """
 def prepareCols(data):
-    toDrop = ['id', 'recorded_by', 'scheme_name', 'ward', 'wpt_name', 'subvillage', 'waterpoint_type_group']
+    toDrop = ['id', 'recorded_by', 'scheme_name', 'wpt_name', 'waterpoint_type_group']
     data = data.drop(columns=toDrop)
     assert (not bool(set(toDrop) & set(data.columns)))
     print("{} removed from dataset \n".format(toDrop))
@@ -280,10 +317,14 @@ Usage:
 train_data = amount_tsh_impute_regions(train_data)
 """
 def amount_tsh_impute_regions(dataset):
-    for i in range(0, len(dataset)):
-        if dataset.amount_tsh[i] == 0:
-            if dataset.region[i] in ['Dodoma','Kagera','Mbeya','Tabora']:
-                dataset.amount_tsh[i] = dataset.amount_tsh.mean()
+    mean = dataset.amount_tsh.mean()
+
+    def impute_am(row, mean):
+        if float(row['amount_tsh']) == 0 and row['region'] in ['Dodoma', 'Kagera', 'Mbeya', 'Tabora']:
+                row['amount_tsh'] = mean
+        return row
+    dataset.apply(lambda row: impute_am(row, mean), axis=1)
+    print("amount_tsh imputed with mean for regions: ['Dodoma','Kagera','Mbeya','Tabora']")
     return dataset
 
 """
@@ -297,6 +338,7 @@ def impute_lat(dataset):
     dataset['latitude'] = dataset['latitude'].replace({-0.00000002:np.nan})
     numeric_dtypes = ['int16', 'int32', 'int64', 
                       'float16', 'float32', 'float64']
+    lat_mean = dataset['latitude'].mean()
     for i in range(0, len(dataset)): 
         if m.isnan(dataset.latitude[i]) == True:
             for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
@@ -304,13 +346,15 @@ def impute_lat(dataset):
                     dataset.latitude.iloc[i] = dataset.latitude[dataset[j] == dataset[j].iloc[i]].mean()
                     break
                 elif j == "basin":
-                    dataset.latitude.iloc[i] = train_data['latitude'].mean()
+                    dataset.latitude.iloc[i] = lat_mean
+    print("latitude imputed with mean")
     return dataset
 
 def fix_latitude(dataset):
     for i in range(0, len(dataset)):
         if dataset.latitude[i] == -0.00000002:
             dataset.latitude[i] = dataset.latitude[dataset['region']==dataset.region[i]].mean()
+    print("latitude imputed with mean")
     return dataset
 
 """
@@ -323,6 +367,7 @@ def impute_long(dataset):
     dataset['longitude'] = dataset['longitude'].replace({0:np.nan})
     numeric_dtypes = ['int16', 'int32', 'int64', 
                       'float16', 'float32', 'float64']
+    long_mean = dataset['longitude'].mean()
     for i in range(0, len(dataset)): 
         if m.isnan(dataset.longitude[i]) == True:
             for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
@@ -330,7 +375,30 @@ def impute_long(dataset):
                     dataset.longitude.iloc[i] = dataset.longitude[dataset[j] == dataset[j].iloc[i]].mean()
                     break
                 elif j == "basin":
-                    dataset.longitude.iloc[i] = train_data['longitude'].mean()
+                    dataset.longitude.iloc[i] = long_mean
+    print("longitude imputed with mean")
+    return dataset
+
+"""
+#Impute population by the mean of the population
+
+Usage:
+train_data = impute_pop(train_data)
+"""
+def impute_pop(dataset):
+    dataset['population'] = dataset['population'].replace({0:np.nan})
+    numeric_dtypes = ['int16', 'int32', 'int64', 
+                      'float16', 'float32', 'float64']
+    mean = dataset['population'].mean()
+    for i in range(0, len(dataset)): 
+        if m.isnan(dataset.population[i]) == True:
+            for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
+                if m.isnan(dataset.population[dataset[j] == dataset[j].iloc[i]].mean()) == False:
+                    dataset.population.iloc[i] = dataset.population[dataset[j] == dataset[j].iloc[i]].mean()
+                    break
+                elif j == "basin":
+                    dataset.population.iloc[i] = mean
+    print("population imputed with mean")
     return dataset
 
 def fix_longitude(dataset):
@@ -346,7 +414,7 @@ Usage:
 train_data = density(train_data)
 """
 def density(dataset):
-    tanz_pop = pd.read_csv("Tanzania_pop.csv", delimiter=';')
+    tanz_pop = pd.read_csv("other_datasets/Tanzania_pop.csv", delimiter=';')
     dataset.insert(40,'region_pop', dataset['region'].map(tanz_pop.set_index('Region')['population']))
     dataset['density'] = dataset['population'] / dataset['region_pop']
     del dataset['region_pop']
@@ -394,8 +462,8 @@ Usage:
 train_data = adding_PTR(train_data)
 """
 
-def adding_PTR(df):
-    teacher_ratio = pd.read_csv("teacher_data.csv", delimiter=';')
+def adding_PTR(train_data):
+    teacher_ratio = pd.read_csv("other_datasets/teacher_data.csv", delimiter=';')
 
     teacher_ratio_ward = teacher_ratio.groupby(['WARD']).mean()
     teacher_ratio_ward = teacher_ratio_ward.reset_index()
@@ -409,7 +477,7 @@ def adding_PTR(df):
     for i in range(0, len(train_data)): 
         if m.isnan(train_data.PTR[i]) == True: 
             train_data.PTR[i] =teacher_ratio_region.PTR[ teacher_ratio_region.REGION == train_data.region[i]]
-    return df
+    return train_data
 
 """    
 Outputs a csv file with the predictions ready for submission 
@@ -428,4 +496,4 @@ def submission(model):
 
          submit.status_group = submit.status_group.replace(vals_to_replace)        
 
-         submit.to_csv('pump_predictions.csv', index=False)
+         submit.to_csv('other_datasets/pump_predictions.csv', index=False)
