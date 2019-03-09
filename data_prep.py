@@ -365,6 +365,7 @@ Usage:
 train_data = impute_long(train_data)
 """
 def impute_long(dataset):
+    dataset = flag_impute(dataset,'longitude')
     dataset['longitude'] = dataset['longitude'].replace({0:np.nan})
     numeric_dtypes = ['int16', 'int32', 'int64', 
                       'float16', 'float32', 'float64']
@@ -521,7 +522,31 @@ def distance_capital(dataset):
             m.cos(phi1)*m.cos(phi2)*m.sin(dlambda/2)**2
 
         return 2*R*m.atan2(m.sqrt(a), m.sqrt(1 - a))
-    for i in range(0, len(dataset)): 
-        x = dataset.latitude[i], dataset.longitude[i]
-        dataset['distance'] = haversine(tanz_capital, x)
-    return dataset
+    for i in range(0, len(df)): 
+        x = df.latitude[i], df.longitude[i]
+        df['distance'] = haversine(tanz_capital, x)
+    return df
+
+def flag_impute(df,column):
+    ## This function will add a flagg_column column that flags the 0 before they are imputed
+    flag = 'Flag_' + column
+    df[flag ] = 0
+    df[flag][df[column] == 0] = 1
+    return df
+
+
+## Check for Nan and ipute with the mean of the lowest level regional variable 
+def impute_pop(df):
+    df = flag_impute(df,'population')
+    df['population'] = df['population'].replace({0:np.nan})
+    numeric_dtypes = ['int16', 'int32', 'int64', 
+                      'float16', 'float32', 'float64']
+    for i in range(0, len(df)): 
+        if m.isnan(df.population[i]) == True:
+            for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
+                if m.isnan(df.population[df[j] == df[j].iloc[i]].mean()) == False:
+                    df.population.iloc[i] = df.population[df[j] == df[j].iloc[i]].mean()
+                    break
+                elif j == "basin":
+                    df.population.iloc[i] = train_data['population'].mean()
+    return df
