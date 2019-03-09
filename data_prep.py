@@ -320,3 +320,29 @@ def density(df):
     df['density'] = df['population'] / df['region_pop']
     del df['region_pop']
     return df
+
+"""
+#Add a column from tupil_teacher_ratio gotteen from teacher_data
+
+Usage:
+train_data = adding_PTR(train_data)
+"""
+
+def adding_PTR(df):
+    teacher_ratio = pd.read_csv("teacher_data.csv", delimiter=';')
+
+    teacher_ratio_ward = teacher_ratio.groupby(['WARD']).mean()
+    teacher_ratio_ward = teacher_ratio_ward.reset_index()
+    teacher_ratio_region = teacher_ratio.groupby(['REGION']).mean()
+    teacher_ratio_region = teacher_ratio_region.reset_index()
+
+    train_data['region'] = train_data['region'].str.lower()
+    teacher_ratio_region['REGION'] = teacher_ratio_region['REGION'].str.lower()
+
+    train_data.insert(2, 'PTR', train_data['ward'].map(teacher_ratio_ward.set_index('WARD')['PTR']))
+    for i in range(0, len(train_data)): 
+        if m.isnan(train_data.PTR[i]) == True: 
+            train_data.PTR[i] =teacher_ratio_region.PTR[ teacher_ratio_region.REGION == train_data.region[i]]
+    return df
+
+    
