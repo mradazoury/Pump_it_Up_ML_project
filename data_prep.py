@@ -281,7 +281,7 @@ def amount_tsh_impute_regions(dataset):
         if dataset.amount_tsh[i] == 0:
             if dataset.region[i] in ['Dodoma','Kagera','Mbeya','Tabora']:
                 dataset.amount_tsh[i] = dataset.amount_tsh.mean()
-    return new_df
+    return dataset
 
 """
 #Impute latitude by the mean of the region
@@ -293,7 +293,7 @@ def fix_latitude(dataset):
     for i in range(0, len(dataset)):
         if dataset.latitude[i] == -0.00000002:
             dataset.latitude[i] = dataset.latitude[dataset['region']==dataset.region[i]].mean()
-    return new_df
+    return dataset
 
 """
 #Impute Longitude by the mean of the region
@@ -305,4 +305,4 @@ def fix_longitude(dataset):
     for i in range(0, len(dataset)):
         if dataset.longitude[i] == 0:
             dataset.longitude[i] = dataset.longitude[dataset['region']==dataset.region[i]].mean()
-    return new_df
+    return dataset
