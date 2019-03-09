@@ -306,3 +306,17 @@ def fix_longitude(dataset):
         if dataset.longitude[i] == 0:
             dataset.longitude[i] = dataset.longitude[dataset['region']==dataset.region[i]].mean()
     return dataset
+
+"""
+#Add a column from density which is the result from dividing population from region density (external source)
+
+Usage:
+train_data = density(train_data)
+"""
+
+def density(df):
+    tanz_pop = pd.read_csv("Tanzania_pop.csv", delimiter=';')
+    df.insert(40,'region_pop', df['region'].map(tanz_pop.set_index('Region')['population']))
+    df['density'] = df['population'] / df['region_pop']
+    del df['region_pop']
+    return df
