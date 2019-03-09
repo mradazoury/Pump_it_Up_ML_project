@@ -429,3 +429,28 @@ def submission(model):
          submit.status_group = submit.status_group.replace(vals_to_replace)        
 
          submit.to_csv('pump_predictions.csv', index=False)
+"""    
+Calculating distance between lat long and lat long of capital
+Usage:
+train_data = distance_capital(train_data) 
+"""
+
+def distance_capital(df):
+    tanz_capital= 6.1630, 35.7516
+    def haversine(coord1, coord2):
+        R = 6372800  # Earth radius in meters
+        lat1, lon1 = coord1
+        lat2, lon2 = coord2
+
+        phi1, phi2 = m.radians(lat1), m.radians(lat2) 
+        dphi       = m.radians(lat2 - lat1)
+        dlambda    = m.radians(lon2 - lon1)
+
+        a = m.sin(dphi/2)**2 + \
+            m.cos(phi1)*m.cos(phi2)*m.sin(dlambda/2)**2
+
+        return 2*R*m.atan2(m.sqrt(a), m.sqrt(1 - a))
+    for i in range(0, len(df)): 
+        x = df.latitude[i], df.longitude[i]
+        df['distance'] = haversine(tanz_capital, x)
+    return df
