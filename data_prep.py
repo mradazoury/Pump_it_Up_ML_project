@@ -20,6 +20,7 @@ from sklearn.decomposition import PCA
 from sklearn import datasets
 from sklearn.feature_selection import RFE,SelectFromModel
 
+
 from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.datasets import make_classification
 
@@ -497,13 +498,15 @@ def submission(model):
          submit.status_group = submit.status_group.replace(vals_to_replace)        
 
          submit.to_csv('predictions/pump_predictions.csv', index=False)
+
+
 """    
 Calculating distance between lat long and lat long of capital
 Usage:
 train_data = distance_capital(train_data) 
 """
 
-def distance_capital(df):
+def distance_capital(dataset):
     tanz_capital= 6.1630, 35.7516
     def haversine(coord1, coord2):
         R = 6372800  # Earth radius in meters
@@ -518,7 +521,7 @@ def distance_capital(df):
             m.cos(phi1)*m.cos(phi2)*m.sin(dlambda/2)**2
 
         return 2*R*m.atan2(m.sqrt(a), m.sqrt(1 - a))
-    for i in range(0, len(df)): 
-        x = df.latitude[i], df.longitude[i]
-        df['distance'] = haversine(tanz_capital, x)
-    return df
+    for i in range(0, len(dataset)): 
+        x = dataset.latitude[i], dataset.longitude[i]
+        dataset['distance'] = haversine(tanz_capital, x)
+    return dataset
