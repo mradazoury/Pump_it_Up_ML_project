@@ -120,7 +120,7 @@ def shortlist_scheme_management(dataset):
 
     dataset.scheme_management = dataset.scheme_management.map(scheme_management_replace)
     
-    assert(set(dataset.lga.unique()) == {'VWC','WUG','Water authority','WUA','Water Board','Parastatal','Private operator','Company', 'other'})
+    assert(set(dataset.scheme_management.unique()) == {'VWC','WUG','Water authority','WUA','Water Board','Parastatal','Private operator','Company', 'other'})
     print("`scheme_management` shortlisted to {'VWC','WUG','Water authority','WUA','Water Board','Parastatal','Private operator','Company', 'other'} only \n")
     return dataset
 
@@ -140,7 +140,7 @@ def shortlist_region_code(dataset):
     dataset.region_code = dataset.region_code.map(region_code_replace)
     
     assert(set(dataset.region_code.unique()) == {11,17,12,3,5,18,19,2,16,10,4,1,13,14,20, 'other'})
-    print("`scheme_management` shortlisted to {11,17,12,3,5,18,19,2,16,10,4,1,13,14,20, 'other'} only \n")
+    print("`region_code` shortlisted to {11,17,12,3,5,18,19,2,16,10,4,1,13,14,20, 'other'} only \n")
     return dataset
 
 
