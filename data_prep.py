@@ -287,8 +287,11 @@ def amount_tsh_impute_regions(dataset):
 #Impute latitude by the mean of the region
 
 Usage:
+
 train_data = fix_latitude(train_data)
 """
+
+
 def fix_latitude(dataset):
     for i in range(0, len(dataset)):
         if dataset.latitude[i] == -0.00000002:
@@ -299,8 +302,22 @@ def fix_latitude(dataset):
 #Impute Longitude by the mean of the region
 
 Usage:
-train_data = fix_longitude(train_data)
+train_data = impute_long(train_data)
 """
+def impute_long(dataset):
+    dataset['longitude'] = dataset['longitude'].replace({0:np.nan})
+    numeric_dtypes = ['int16', 'int32', 'int64', 
+                      'float16', 'float32', 'float64']
+    for i in range(0, len(dataset)): 
+        if m.isnan(dataset.longitude[i]) == True:
+            for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
+                if m.isnan(dataset.longitude[dataset[j] == dataset[j].iloc[i]].mean()) == False:
+                    dataset.longitude.iloc[i] = dataset.longitude[dataset[j] == dataset[j].iloc[i]].mean()
+                    break
+                elif j == "basin":
+                    dataset.longitude.iloc[i] = train_data['longitude'].mean()
+    return dataset
+
 def fix_longitude(dataset):
     for i in range(0, len(dataset)):
         if dataset.longitude[i] == 0:
@@ -314,9 +331,9 @@ Usage:
 train_data = density(train_data)
 """
 
-def density(df):
+def density(dataset):
     tanz_pop = pd.read_csv("Tanzania_pop.csv", delimiter=';')
-    df.insert(40,'region_pop', df['region'].map(tanz_pop.set_index('Region')['population']))
-    df['density'] = df['population'] / df['region_pop']
-    del df['region_pop']
-    return df
+    dataset.insert(40,'region_pop', dataset['region'].map(tanz_pop.set_index('Region')['population']))
+    dataset['density'] = dataset['population'] / dataset['region_pop']
+    del dataset['region_pop']
+    return dataset
