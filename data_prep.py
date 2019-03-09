@@ -89,7 +89,7 @@ def shortlist_lga(dataset):
 extraction_type - shortlist of the 8 higher and category other, note that nulls will be included in this criteria.
 
 Usage:
-dataset = shortlist_lga(dataset)
+dataset = shortlist_extraction_type(dataset)
 """
 def shortlist_extraction_type(dataset):
     def extraction_type_replace(x):
@@ -109,7 +109,7 @@ def shortlist_extraction_type(dataset):
 scheme_management - shortlist of the 8 higher and category other, note that nulls will be included in this criteria.
 
 Usage:
-dataset = shortlist_lga(dataset)
+dataset = shortlist_scheme_management(dataset)
 """
 def shortlist_scheme_management(dataset):
     def scheme_management_replace(x):
@@ -128,7 +128,7 @@ def shortlist_scheme_management(dataset):
 scheme_management - shortlist of the 15 higher and category other, note that nulls will be included in this criteria.
 
 Usage:
-dataset = shortlist_lga(dataset)
+dataset = shortlist_region_code(dataset)
 """
 def shortlist_region_code(dataset):
     def region_code_replace(x):
@@ -288,9 +288,21 @@ def amount_tsh_impute_regions(dataset):
 
 Usage:
 
-train_data = fix_latitude(train_data)
+train_data = impute_lat(train_data)
 """
-
+def impute_lat(dataset):
+    dataset['latitude'] = dataset['latitude'].replace({-0.00000002:np.nan})
+    numeric_dtypes = ['int16', 'int32', 'int64', 
+                      'float16', 'float32', 'float64']
+    for i in range(0, len(dataset)): 
+        if m.isnan(dataset.latitude[i]) == True:
+            for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
+                if m.isnan(dataset.latitude[dataset[j] == dataset[j].iloc[i]].mean()) == False:
+                    dataset.latitude.iloc[i] = dataset.latitude[dataset[j] == dataset[j].iloc[i]].mean()
+                    break
+                elif j == "basin":
+                    dataset.latitude.iloc[i] = train_data['latitude'].mean()
+    return dataset
 
 def fix_latitude(dataset):
     for i in range(0, len(dataset)):
@@ -330,10 +342,63 @@ def fix_longitude(dataset):
 Usage:
 train_data = density(train_data)
 """
-
 def density(dataset):
     tanz_pop = pd.read_csv("Tanzania_pop.csv", delimiter=';')
     dataset.insert(40,'region_pop', dataset['region'].map(tanz_pop.set_index('Region')['population']))
     dataset['density'] = dataset['population'] / dataset['region_pop']
     del dataset['region_pop']
     return dataset
+
+"""
+Usage:
+
+feature_skewness(test_temp)
+feature_skewness(train_temp)
+
+test_temp = fix_skewness(test_temp)
+train_temp = fix_skewness(train_temp)
+"""
+def feature_skewness(df):
+    numeric_dtypes = ['int16', 'int32', 'int64', 
+                      'float16', 'float32', 'float64']
+    numeric_features = []
+    for i in df.columns:
+        if df[i].dtype in numeric_dtypes: 
+            numeric_features.append(i)
+
+    feature_skew = df[numeric_features].apply(
+        lambda x: skew(x)).sort_values(ascending=False)
+    skews = pd.DataFrame({'skew':feature_skew})
+    return feature_skew, numeric_features
+
+def fix_skewness(df):
+    feature_skew, numeric_features = feature_skewness(df)
+    high_skew = feature_skew[feature_skew > 0.75]
+    skew_index = high_skew.index
+    
+    for i in skew_index:
+        df[i] = boxcox1p(df[i], boxcox_normmax(df[i]+1))
+
+    skew_features = df[numeric_features].apply(
+        lambda x: skew(x)).sort_values(ascending=False)
+    skews = pd.DataFrame({'skew':skew_features})
+    return df
+
+"""
+Outputs a csv file with the predictions ready for submission 
+Usage:
+submission(model) 
+"""
+def submission(model):    
+
+         predictions = model.predict(test_set)
+
+         data = {'ID': test_id, 'status_group': predictions}
+
+         submit = pd.DataFrame(data=data)
+
+         vals_to_replace = {1:'functional',2:'non functional',3:'functional needs repair'}
+
+         submit.status_group = submit.status_group.replace(vals_to_replace)        
+
+         submit.to_csv('pump_predictions.csv', index=False)
