@@ -319,7 +319,7 @@ train_data = amount_tsh_impute_regions(train_data)
 """
 def amount_tsh_impute_regions(dataset):
     mean = dataset.amount_tsh.mean()
-
+    dataset = flag_impute(dataset,'population')
     def impute_am(row, mean):
         if float(row['amount_tsh']) == 0 and row['region'] in ['Dodoma', 'Kagera', 'Mbeya', 'Tabora']:
                 row['amount_tsh'] = mean
@@ -388,6 +388,7 @@ Usage:
 train_data = impute_pop(train_data)
 """
 def impute_pop(dataset):
+    df = flag_impute(df,'population')
     dataset['population'] = dataset['population'].replace({0:np.nan})
     numeric_dtypes = ['int16', 'int32', 'int64', 
                       'float16', 'float32', 'float64']
@@ -535,18 +536,3 @@ def flag_impute(df,column):
     return df
 
 
-## Check for Nan and ipute with the mean of the lowest level regional variable 
-def impute_pop(df):
-    df = flag_impute(df,'population')
-    df['population'] = df['population'].replace({0:np.nan})
-    numeric_dtypes = ['int16', 'int32', 'int64', 
-                      'float16', 'float32', 'float64']
-    for i in range(0, len(df)): 
-        if m.isnan(df.population[i]) == True:
-            for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
-                if m.isnan(df.population[df[j] == df[j].iloc[i]].mean()) == False:
-                    df.population.iloc[i] = df.population[df[j] == df[j].iloc[i]].mean()
-                    break
-                elif j == "basin":
-                    df.population.iloc[i] = train_data['population'].mean()
-    return df
