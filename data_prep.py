@@ -51,7 +51,7 @@ Usage:
 train_data = addLabelToTrainData(train_data, train_labels)
 """
 def addLabelToTrainData(train_data, train_labels):
-    labels = train_labels.copy().drop(columns='id')
+    labels = train_labels.copy().drop('id')
     train_data = train_data.join(labels)
     assert ('status_group' in train_data.columns)
     print("`status_group` added to train_data \n")
