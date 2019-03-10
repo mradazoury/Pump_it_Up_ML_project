@@ -207,6 +207,24 @@ def convert_construction_year(dataset):
     print("`construction_year` converted to `age`, which is elapsed years (zeroes ignored) \n")
     return dataset
 
+"""
+construction_year_2 - converts it to years elapsed (AKA age) -- (zeroes ignored)
+
+Usage:
+dataset = convert_construction_year(dataset)
+"""
+
+def inpute_construction_year_2(df):
+    df['construction_year'] = df['construction_year'].replace({0:np.nan})
+    df.construction_year.isna().sum()
+    extraction_type = df[["construction_year","extraction_type"]]
+    extraction_type = extraction_type.groupby(['extraction_type']).mean()
+    extraction_type = extraction_type.reset_index()
+    for i in range(0, len(df)): 
+        if m.isnan(df.construction_year[i]) == True: 
+            df.construction_year[i] =extraction_type.construction_year[ extraction_type.extraction_type == df.extraction_type[i]]
+    return df
+
 
 """
 date_recorded - converts it to days elapsed
