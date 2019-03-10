@@ -234,7 +234,7 @@ Usage:
 dataset = bin_feature(dataset, feature, bins)
 """
 def bin_feature(dataset, feature, bins):
-    dataset[feature] = pd.cut(dataset[feature] , bins)
+    dataset[feature] = pd.qcut(dataset[feature] , bins)
     print("`{}` has been binned to {} categories:".format(feature, bins))
     print(dataset[feature].unique().categories)
     print("\n")
