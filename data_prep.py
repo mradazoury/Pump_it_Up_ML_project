@@ -534,7 +534,7 @@ def distance_capital(dataset):
         return 2*R*m.atan2(m.sqrt(a), m.sqrt(1 - a))
     for i in range(0, len(dataset)): 
         x = dataset.latitude[i], dataset.longitude[i]
-        dataset['distance'] = haversine(tanz_capital, x)
+        dataset['distance'][i] = haversine(tanz_capital, x)
     print("added distance to capital")
     return dataset
 
@@ -546,6 +546,8 @@ def flag_impute(df,column):
     return df
 
 """
+ATTENTION: This might not work when applying on training set, no sure on how to fix it. 
+
 adding a column with cluster numbers
 Usage:
 train_data = clustering(train_data) 
