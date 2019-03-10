@@ -51,7 +51,7 @@ Usage:
 train_data = addLabelToTrainData(train_data, train_labels)
 """
 def addLabelToTrainData(train_data, train_labels):
-    labels = train_labels.copy().drop('id')
+    labels = train_labels.copy().drop(columns='id')
     train_data = train_data.join(labels)
     assert ('status_group' in train_data.columns)
     print("`status_group` added to train_data \n")
@@ -388,7 +388,7 @@ Usage:
 train_data = impute_pop(train_data)
 """
 def impute_pop(dataset):
-    df = flag_impute(df,'population')
+    dataset = flag_impute(dataset,'population')
     dataset['population'] = dataset['population'].replace({0:np.nan})
     numeric_dtypes = ['int16', 'int32', 'int64', 
                       'float16', 'float32', 'float64']
