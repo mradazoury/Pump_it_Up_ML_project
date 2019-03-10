@@ -570,6 +570,7 @@ def label_encoder(df):
     for col in categorical:
         df[col] = le.fit_transform(df[col].astype(str))
     return df
+"""   
 ATTENTION: This might not work when applying on training set, no sure on how to fix it. 
 
 adding a column with cluster numbers
