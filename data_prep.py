@@ -64,8 +64,8 @@ Usage:
 train_data = prepareCols(train_data)
 test_data = prepareCols(test_data)
 """
-def prepareCols(data):
-    toDrop = ['id', 'recorded_by', 'scheme_name', 'wpt_name', 'waterpoint_type_group']
+def dropCols(data):
+    toDrop = ['recorded_by', 'scheme_name', 'wpt_name', 'waterpoint_type_group']
     data = data.drop(columns=toDrop)
     assert (not bool(set(toDrop) & set(data.columns)))
     print("{} removed from dataset \n".format(toDrop))
@@ -292,7 +292,7 @@ train_data = amount_tsh_impute_regions(train_data)
 """
 def amount_tsh_impute_regions(dataset):
     mean = dataset.amount_tsh.mean()
-    dataset = flag_impute(dataset,'population')
+    dataset = flag_impute(dataset,'amount_tsh')
     def impute_am(row, mean):
         if float(row['amount_tsh']) == 0 and row['region'] in ['Dodoma', 'Kagera', 'Mbeya', 'Tabora']:
                 row['amount_tsh'] = mean
@@ -302,79 +302,42 @@ def amount_tsh_impute_regions(dataset):
     return dataset
 
 """
-Impute latitude by the mean of the region
+Impute column by the forst available mean from subvillage, ward, lga, region, dataset mean
 
 Usage:
 
-train_data = impute_lat(train_data)
+train_data = impute_column(train_data, "latitude")
 """
-def impute_lat(dataset):
-    dataset['latitude'] = dataset['latitude'].replace({-0.00000002:np.nan})
-    numeric_dtypes = ['int16', 'int32', 'int64', 
-                      'float16', 'float32', 'float64']
-    lat_mean = dataset['latitude'].mean()
-    for i in range(0, len(dataset)): 
-        if m.isnan(dataset.latitude[i]) == True:
-            for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
-                if m.isnan(dataset.latitude[dataset[j] == dataset[j].iloc[i]].mean()) == False:
-                    dataset.latitude.iloc[i] = dataset.latitude[dataset[j] == dataset[j].iloc[i]].mean()
-                    break
-                elif j == "basin":
-                    dataset.latitude.iloc[i] = lat_mean
-    print("latitude imputed with mean")
-    return dataset
+def impute_column(dataset, column):
+    subvillage = pd.DataFrame(dataset.groupby('subvillage')[column].mean())
+    ward = pd.DataFrame(dataset.groupby('ward')[column].mean())
+    lga = pd.DataFrame(dataset.groupby('lga')[column].mean())
+    region = pd.DataFrame(dataset.groupby('region')[column].mean())
 
-def fix_latitude(dataset):
-    for i in range(0, len(dataset)):
-        if dataset.latitude[i] == -0.00000002:
-            dataset.latitude[i] = dataset.latitude[dataset['region']==dataset.region[i]].mean()
-    print("latitude imputed with mean")
-    return dataset
 
-"""
-Impute Longitude by the mean of the region
+    lat_mean = dataset[column].mean()
 
-Usage:
-train_data = impute_long(train_data)
-"""
-def impute_long(dataset):
-    dataset = flag_impute(dataset,'longitude')
-    dataset['longitude'] = dataset['longitude'].replace({0:np.nan})
-    numeric_dtypes = ['int16', 'int32', 'int64', 
-                      'float16', 'float32', 'float64']
-    long_mean = dataset['longitude'].mean()
-    for i in range(0, len(dataset)): 
-        if m.isnan(dataset.longitude[i]) == True:
-            for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
-                if m.isnan(dataset.longitude[dataset[j] == dataset[j].iloc[i]].mean()) == False:
-                    dataset.longitude.iloc[i] = dataset.longitude[dataset[j] == dataset[j].iloc[i]].mean()
-                    break
-                elif j == "basin":
-                    dataset.longitude.iloc[i] = long_mean
-    print("longitude imputed with mean")
-    return dataset
 
-"""
-Impute population by the mean of the population
+    dataset[column] = dataset[column].replace({-0.00000002:np.nan})
 
-Usage:
-train_data = impute_pop(train_data)
-"""
-def impute_pop(dataset):
-    dataset = flag_impute(dataset,'population')
-    dataset['population'] = dataset['population'].replace({0:np.nan})
-    numeric_dtypes = ['int16', 'int32', 'int64', 
-                      'float16', 'float32', 'float64']
-    mean = dataset['population'].mean()
-    for i in range(0, len(dataset)): 
-        if m.isnan(dataset.population[i]) == True:
-            for j in ("subvillage", "ward", "lga", "district_code", "region", "basin"):
-                if m.isnan(dataset.population[dataset[j] == dataset[j].iloc[i]].mean()) == False:
-                    dataset.population.iloc[i] = dataset.population[dataset[j] == dataset[j].iloc[i]].mean()
-                    break
-                elif j == "basin":
-                    dataset.population.iloc[i] = mean
-    print("population imputed with mean")
+    def firstNonNan(listfloats):
+        for item in listfloats:
+            if m.isnan(item) == False:
+                return item
+
+    def impute(row):
+        if m.isnan(row[column]) == True:
+            subvillage_lat = subvillage.loc[row['subvillage']][column]
+            ward_lat = ward.loc[row['ward']][column]
+            lga_lat = lga.loc[row['lga']][column]
+            region_lat = region.loc[row['region']][column]
+
+            row[column] = firstNonNan([subvillage_lat , ward_lat , lga_lat, region_lat, lat_mean])
+            assert(m.isnan(row[column]) == False)
+        return row
+    dataset = dataset.apply(impute, axis=1)
+    dataset = flag_impute(dataset, column)
+    print("{} imputed with mean".format(column))
     return dataset
 
 """
@@ -409,6 +372,7 @@ def density(dataset):
     dataset['region_pop'] = dataset['region'].map(tanz_pop.set_index('Region')['population'])
     dataset.density = dataset['population'] / dataset['region_pop']
     del dataset['region_pop']
+    print("added density")
     return dataset
 
 """
