@@ -511,7 +511,7 @@ def distance_capital(dataset):
         return 2*R*m.atan2(m.sqrt(a), m.sqrt(1 - a))
     for i in range(0, len(dataset)): 
         x = dataset.latitude[i], dataset.longitude[i]
-        dataset['distance'] = haversine(tanz_capital, x)
+        dataset['distance'][i] = haversine(tanz_capital, x)
     print("added distance to capital")
     return dataset
 
@@ -570,3 +570,40 @@ def label_encoder(df):
     for col in categorical:
         df[col] = le.fit_transform(df[col].astype(str))
     return df
+ATTENTION: This might not work when applying on training set, no sure on how to fix it. 
+
+adding a column with cluster numbers
+Usage:
+train_data = clustering(train_data) 
+"""
+
+def clustering(train):
+
+    def cluster(X, labels_true, eps=3, min_samples=30, verbose=False):
+        db = DBSCAN(eps=0.1, min_samples=30).fit(X)
+        core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+        core_samples_mask[db.core_sample_indices_] = True
+        labels = db.labels_
+
+        # Number of clusters in labels, ignoring noise if present.
+        n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+        n_noise_ = list(labels).count(-1)
+
+        if verbose is True:
+            print('Estimated number of clusters: %d' % n_clusters_)
+            print('Estimated number of noise points: %d' % n_noise_)
+            print("Homogeneity: %0.3f" %
+                  metrics.homogeneity_score(labels_true, labels))
+            print("Completeness: %0.3f" %
+                  metrics.completeness_score(labels_true, labels))
+            print("Adjusted Mutual Information: %0.3f"
+                  % metrics.adjusted_mutual_info_score(labels_true, labels))
+        return db
+
+    variables = ['longitude', 'latitude']
+    db = cluster(train.loc[:, variables], train_labels)
+    
+    train['cluster'] = db.labels_
+    train['cluster'] = train['cluster'].astype('category',copy=False)
+    
+    return train 
