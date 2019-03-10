@@ -5,7 +5,7 @@ from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import SVR
 import xgboost as xgb
 from sklearn.linear_model import SGDRegressor
-
+from sklearn.model_selection import cross_val_score
 random_seed = 6666
 
 def numerical_features(df):
@@ -66,3 +66,52 @@ def label_encoder(df):
         df[col] = le.fit_transform(df[col].astype(str))
     return df
 
+
+def test_score( dataset , name='test',train_id = False ):
+    ### PLease specify the name!!!
+    K = KFold(5, random_state  = random_seed)
+    to_int = {'functional':1,'non functional':2,'functional needs repair':3}
+    to_cat = {1:'functional',2:'non functional',3:'functional needs repair'}
+
+
+    
+    
+    y_Train = dataset['status_group'].loc[(dataset['is_test'].isin([0]) )]
+    y_Train   = y_Train.replace(to_int).copy()
+    dataset = dataset.drop('status_group',axis=1).copy()
+    ### Label encode
+    dataset = label_encoder(dataset).copy()
+    ### Divide test and train 
+    X_Train= dataset.loc[(dataset['is_test'].isin([0]) )].drop('is_test',axis=1)
+    test = dataset.loc[(dataset['is_test'].isin([1]) )].drop(['is_test'],axis=1)
+
+    #### Set ID aside for test 
+    ID = test['id'] 
+
+    ### If train_id set to Trues the the ID will be kept as feature
+    if train_id == False:
+        X_Train = X_Train.set_index('id')
+        test = test.set_index('id')
+    #### Random forest with params from a gridsearch
+    RFC  = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
+            max_depth=80,  max_leaf_nodes=None,
+            min_impurity_decrease=0.0, min_impurity_split=None,
+            min_samples_leaf=2, min_samples_split=8,
+            min_weight_fraction_leaf=0.0, n_estimators=100, n_jobs=None,
+            oob_score=False, random_state=42, verbose=0, warm_start=False)
+                      
+    ###Scores from cross val 
+    scores = cross_val_score(RFC, X_Train, y_Train,scoring='accuracy', cv=K)
+    print('The average of the cross validation with Random Forest:{}'.format(scores.mean(), scores.std() * 2))
+    
+    #### Refitting on the whole data 
+    RFC.fit(X_Train , y_Train)
+    ### Predict on our test                 
+    predictions = RFC.predict(test)
+    ### Save the prediction file with the right format to submit 
+    data = {'ID': ID, 'status_group': predictions}
+    submit = pd.DataFrame(data=data)
+    submit['status_group'] = submit.status_group.replace(to_cat)
+    submit.to_csv('predictions/'+name+'.csv', index=False)
+    return scores , predictions 
+    
