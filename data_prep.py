@@ -397,6 +397,25 @@ def impute_construction_year(dataset):
     print("age imputed mean")
     return dataset
 
+"""
+Impute construction year with the max of median, or mean, or date recorded in (years)
+
+Usage:
+train_data = impute_construction_year_2(train_data)
+"""
+
+def inpute_construction_year_2(df):
+    df['construction_year'] = df['construction_year'].replace({0:np.nan})
+    df.construction_year.isna().sum()
+    extraction_type = df[["construction_year","extraction_type"]]
+    extraction_type = extraction_type.groupby(['extraction_type']).mean()
+    extraction_type = extraction_type.reset_index()
+    for i in range(0, len(df)): 
+        if m.isnan(df.construction_year[i]) == True: 
+            df.construction_year[i] =extraction_type.construction_year[ extraction_type.extraction_type == df.extraction_type[i]]
+    return df
+
+
 def fix_longitude(dataset):
     for i in range(0, len(dataset)):
         if dataset.longitude[i] == 0:
