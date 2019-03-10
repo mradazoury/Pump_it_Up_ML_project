@@ -28,7 +28,7 @@
 
 ## DevOps
 
-- Set up AWS (Jupyter/Git integrations) - Went with Google Cloud
+- Set up AWS (Jupyter/Git integrations) - Went with Google Cloud - still having issues
 
 ## Clear predactors suggestion - idea
 
@@ -45,3 +45,11 @@ in 2nd level of stacking add the columns that are CLEAR classifiers to the datas
     - Multi-class regression
   - Theo
     - Random Forest
+
+
+# notes on prepared dataset
+
+- distance is returning the same number
+- district code is converted to float somehow - due to skewness fixing function - commented for now
+- imputing takes lots of time
+- impute population function commented

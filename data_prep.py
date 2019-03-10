@@ -51,7 +51,7 @@ Usage:
 train_data = addLabelToTrainData(train_data, train_labels)
 """
 def addLabelToTrainData(train_data, train_labels):
-    labels = train_labels.copy().drop(columns='id')
+    labels = train_labels[['status_group']]
     train_data = train_data.join(labels)
     assert ('status_group' in train_data.columns)
     print("`status_group` added to train_data \n")
@@ -176,11 +176,11 @@ def shortlist_region_code(dataset):
         if x in list([11,17,12,3,5,18,19,2,16,10,4,1,13,14,20]):
             return x
         else:
-            return 'other'
+            return 0
 
     dataset.region_code = dataset.region_code.map(region_code_replace)
     
-    assert(set(dataset.region_code.unique()) == {11,17,12,3,5,18,19,2,16,10,4,1,13,14,20, 'other'})
+    assert(set(dataset.region_code.unique()) == {11,17,12,3,5,18,19,2,16,10,4,1,13,14,20, 0})
     print("`region_code` shortlisted to {11,17,12,3,5,18,19,2,16,10,4,1,13,14,20, 'other'} only \n")
     return dataset
 
@@ -240,34 +240,6 @@ def bin_feature(dataset, feature, bins):
     print("\n")
     return dataset
 
-
-def reverse_geocode(latlng):
-    result = {}
-    url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng={}'
-    request = url.format(latlng)
-    data = requests.get(request).json()
-    if len(data['results']) > 0:
-        result = data['results'][0]
-    return result
-
-def numerical_features(df):
-    columns = df.columns
-    return df._get_numeric_data().columns
-
-def categorical_features(df):
-    numerical_columns = numerical_features(df)
-    return(list(set(df.columns) - set(numerical_columns)))
-
-def onehot_encode(df):
-    numericals = df.get(numerical_features(df))
-    new_df = numericals.copy()
-    for categorical_column in categorical_features(df):
-        new_df = pd.concat([new_df, 
-                            pd.get_dummies(df[categorical_column], 
-                                           prefix=categorical_column)], 
-                           axis=1)
-    return new_df
-
 """
 Compare the similarity between a series of columns
 
@@ -278,7 +250,7 @@ grouping_col = train_data[['basin',
        'management_group', 'payment', 'payment_type', 'water_quality',
        'quality_group', 'quantity', 'quantity_group', 'source', 'source_type',
        'source_class', 'waterpoint_type', 'waterpoint_type_group']]
-       
+
        *All categorical variables with similarities
 """
 def cramers_corrected_stat(confusion_matrix):
@@ -299,6 +271,7 @@ def show_similars(cols, threshold=0.90):
                 cv12 = cramers_corrected_stat(cm12) # Cramer V statistic
                 if (cv12 > threshold):
                     print((col1, col2), int(cv12*100))
+
 """
 Plot feature importance for Gradiaent Booster and XGB
 
@@ -306,8 +279,8 @@ Usage:
 plot_features(xgb_model, (10,14))
 
 """
-                    
-def plot_features(booster, figsize):    
+
+def plot_features(booster, figsize):
     fig, ax = plt.pyplot.subplots(1,1,figsize=figsize)
     return plot_importance(booster=booster, ax=ax)
 
@@ -324,12 +297,12 @@ def amount_tsh_impute_regions(dataset):
         if float(row['amount_tsh']) == 0 and row['region'] in ['Dodoma', 'Kagera', 'Mbeya', 'Tabora']:
                 row['amount_tsh'] = mean
         return row
-    dataset.apply(lambda row: impute_am(row, mean), axis=1)
+    dataset = dataset.apply(lambda row: impute_am(row, mean), axis=1)
     print("amount_tsh imputed with mean for regions: ['Dodoma','Kagera','Mbeya','Tabora']")
     return dataset
 
 """
-#Impute latitude by the mean of the region
+Impute latitude by the mean of the region
 
 Usage:
 
@@ -359,7 +332,7 @@ def fix_latitude(dataset):
     return dataset
 
 """
-#Impute Longitude by the mean of the region
+Impute Longitude by the mean of the region
 
 Usage:
 train_data = impute_long(train_data)
@@ -382,7 +355,7 @@ def impute_long(dataset):
     return dataset
 
 """
-#Impute population by the mean of the population
+Impute population by the mean of the population
 
 Usage:
 train_data = impute_pop(train_data)
@@ -404,6 +377,26 @@ def impute_pop(dataset):
     print("population imputed with mean")
     return dataset
 
+"""
+Impute construction year with the max of median, or mean, or date recorded in (years)
+
+Usage:
+train_data = impute_construction_year(train_data)
+"""
+def impute_construction_year(dataset):
+    median = np.median(dataset['age'][dataset['age'] != 0])
+    mean = np.mean(dataset['age'][dataset['age'] != 0])
+
+    def impute_age(row, mean, median):
+        if row['age'] == 0 :
+                row['age'] = max(mean, median, row['days_since_recoreded'] / 365 )
+        return row
+
+    dataset = dataset.apply(lambda row: impute_age(row, mean, median), axis=1)
+    assert(len(dataset[dataset['age'] == 0]) == 0)
+    print("age imputed mean")
+    return dataset
+
 def fix_longitude(dataset):
     for i in range(0, len(dataset)):
         if dataset.longitude[i] == 0:
@@ -418,8 +411,8 @@ train_data = density(train_data)
 """
 def density(dataset):
     tanz_pop = pd.read_csv("other_datasets/Tanzania_pop.csv", delimiter=';')
-    dataset.insert(40,'region_pop', dataset['region'].map(tanz_pop.set_index('Region')['population']))
-    dataset['density'] = dataset['population'] / dataset['region_pop']
+    dataset['region_pop'] = dataset['region'].map(tanz_pop.set_index('Region')['population'])
+    dataset.density = dataset['population'] / dataset['region_pop']
     del dataset['region_pop']
     return dataset
 
@@ -482,12 +475,12 @@ def adding_PTR(train_data):
             train_data.PTR[i] =teacher_ratio_region.PTR[ teacher_ratio_region.REGION == train_data.region[i]]
     return train_data
 
-"""    
+"""
 Outputs a csv file with the predictions ready for submission 
 Usage:
-submission(model) 
+submission(model)
 """
-def submission(model):    
+def submission(model):
 
          predictions = model.predict(test_set)
 
@@ -501,13 +494,11 @@ def submission(model):
 
          submit.to_csv('predictions/pump_predictions.csv', index=False)
 
-
-"""    
+"""
 Calculating distance between lat long and lat long of capital
 Usage:
 train_data = distance_capital(train_data) 
 """
-
 def distance_capital(dataset):
     tanz_capital= 6.1630, 35.7516
     def haversine(coord1, coord2):
@@ -523,10 +514,11 @@ def distance_capital(dataset):
             m.cos(phi1)*m.cos(phi2)*m.sin(dlambda/2)**2
 
         return 2*R*m.atan2(m.sqrt(a), m.sqrt(1 - a))
-    for i in range(0, len(df)): 
-        x = df.latitude[i], df.longitude[i]
-        df['distance'] = haversine(tanz_capital, x)
-    return df
+    for i in range(0, len(dataset)): 
+        x = dataset.latitude[i], dataset.longitude[i]
+        dataset['distance'] = haversine(tanz_capital, x)
+    print("added distance to capital")
+    return dataset
 
 def flag_impute(df,column):
     ## This function will add a flagg_column column that flags the 0 before they are imputed
