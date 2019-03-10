@@ -397,29 +397,6 @@ def impute_construction_year(dataset):
     print("age imputed mean")
     return dataset
 
-"""
-Impute construction year with the max of median, or mean, or date recorded in (years)
-Usage:
-train_data = impute_construction_year_2(train_data)
-"""
-
-def inpute_construction_year_2(df):
-    df['age'] = df['age'].replace({0:np.nan})
-    df.age.isna().sum()
-    extraction_type = df[["age","extraction_type"]]
-    extraction_type = extraction_type.groupby(['extraction_type']).mean()
-    extraction_type = extraction_type.reset_index()
-    for i in range(0, len(df)): 
-        if m.isnan(df.age[i]) == True: 
-            df.age[i] =extraction_type.age[ extraction_type.extraction_type == df.extraction_type[i]]
-    return df
-
-
-def fix_longitude(dataset):
-    for i in range(0, len(dataset)):
-        if dataset.longitude[i] == 0:
-            dataset.longitude[i] = dataset.longitude[dataset['region']==dataset.region[i]].mean()
-    return dataset
 
 """
 #Add a column from density which is the result from dividing population from region density (external source)
@@ -498,12 +475,12 @@ Outputs a csv file with the predictions ready for submission
 Usage:
 submission(model)
 """
-def submission(model):
+def submission(model, test_set):
 
          predictions = model.predict(test_set)
 
-         data = {'ID': test_id, 'status_group': predictions}
-
+         data = pd.concat([testIDs[['id']],predictions], axis=1)
+         
          submit = pd.DataFrame(data=data)
 
          vals_to_replace = {1:'functional',2:'non functional',3:'functional needs repair'}
@@ -546,6 +523,53 @@ def flag_impute(df,column):
     return df
 
 """
+Remove outliers for Logistic regression. Must include the target variable inside the dataframe.
+Usage:
+train_data = remove_outliers(train_data) 
+"""
+def remove_outliers(df):
+    X = df.drop(['status_group'], axis=1)
+    y = df.status_group.reset_index(drop=True)
+    ols = sm.OLS(endog = y, exog = X)
+    fit = ols.fit()
+    test = fit.outlier_test()['bonf(p)']
+    outliers = list(test[test<1e-3].index) 
+    df.drop(df.index[outliers])
+    return df
+
+"""
+Standarizw all numerical columns to the same scale
+Usage:
+train_data = scaler(train_data) 
+"""
+def scaler(dataset):
+    scaler = MinMaxScaler()
+    dataset = scaler.fit_transform(dataset)
+    dataset = pd.DataFrame(dataset)
+    return dataset
+
+"""
+Standarizw all numerical columns to the same scale
+Usage:
+train_data = scaler(train_data) 
+"""
+def label_encoder(df):
+    def numerical_features(df):
+        columns = df.columns
+        return df._get_numeric_data().columns
+
+    def categorical_features(df):
+        numerical_columns = numerical_features(df)
+        return(list(set(df.columns) - set(numerical_columns)))
+    
+    categorical = categorical_features(df)
+    # Creating the label encoder object
+    le =  LabelEncoder()
+    
+    # Iterating over the "object" variables to transform the categories into numbers 
+    for col in categorical:
+        df[col] = le.fit_transform(df[col].astype(str))
+    return df
 ATTENTION: This might not work when applying on training set, no sure on how to fix it. 
 
 adding a column with cluster numbers
