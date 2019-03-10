@@ -53,3 +53,16 @@ def Genetic_P(dataset,target):
     new_X = pd.concat([dataset, n],axis=1)
     new_X = new_X.dropna()
     return new_X
+
+
+
+def label_encoder(df):
+    categorical = categorical_features(df)
+    # Creating the label encoder object
+    le =  LabelEncoder()
+    
+    # Iterating over the "object" variables to transform the categories into numbers 
+    for col in categorical:
+        df[col] = le.fit_transform(df[col].astype(str))
+    return df
+
