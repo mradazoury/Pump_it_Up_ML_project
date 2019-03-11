@@ -234,12 +234,9 @@ def convert_date_recorded(dataset):
     dataset = flag_impute(dataset, 'date_recorded')
     dataset["days_since_recoreded"] = 0
     def day_convert(row):
-        if row["days_since_recoreded"] != 0:
-            return (now - pd.to_datetime(row["days_since_recoreded"])).days
-        else:
-            return row["days_since_recoreded"]
-
-    dataset = dataset.apply(day_convert)
+        row["days_since_recoreded"] = (now - pd.to_datetime(row["date_recorded"])).days
+        return row
+    dataset = dataset.apply(day_convert, axis=1)
     print("`date_recorded` converted to `days_since_recoreded`, which is elapsed days (zeroes ignored) \n")
     return dataset
 
@@ -442,7 +439,7 @@ def submission(model, test_set):
          predictions = model.predict(test_set)
 
          data = pd.concat([testIDs[['id']],predictions], axis=1)
-         
+
          submit = pd.DataFrame(data=data)
 
          vals_to_replace = {1:'functional',2:'non functional',3:'functional needs repair'}
@@ -458,8 +455,9 @@ train_data = distance_capital(train_data)
 """
 def distance_capital(dataset):
     tanz_capital= 6.1630, 35.7516
+    dataset['distance'] = 0 
     def haversine(coord1, coord2):
-        R = 6372800  # Earth radius in meters
+        R = 6371  # Earth radius in kms
         lat1, lon1 = coord1
         lat2, lon2 = coord2
 
@@ -470,10 +468,14 @@ def distance_capital(dataset):
         a = m.sin(dphi/2)**2 + \
             m.cos(phi1)*m.cos(phi2)*m.sin(dlambda/2)**2
 
-        return 2*R*m.atan2(m.sqrt(a), m.sqrt(1 - a))
-    for i in range(0, len(dataset)): 
-        x = dataset.latitude[i], dataset.longitude[i]
-        dataset['distance'][i] = haversine(tanz_capital, x)
+        return 2 * R * m.atan2(m.sqrt(a), m.sqrt(1 - a))
+
+    def addDistance(row):
+        if row['latitude'] != 0 and row['longitude'] != 0:
+            x = row['latitude'], row['longitude']
+            row['distance'] = haversine(tanz_capital, x)
+        return row
+    dataset = dataset.apply(addDistance, axis=1)
     print("added distance to capital")
     return dataset
 
