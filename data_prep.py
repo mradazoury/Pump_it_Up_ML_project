@@ -201,29 +201,27 @@ def convert_construction_year(dataset):
             return x
 
     dataset['age'] = dataset.construction_year.map(year_convert)
-    dataset = dataset.drop(columns=["construction_year"])
     assert(max(dataset.age) < 100)
-    assert (not bool(set(["construction_year"]) & set(dataset.columns)))
     print("`construction_year` converted to `age`, which is elapsed years (zeroes ignored) \n")
     return dataset
 
 """
-construction_year_2 - converts it to years elapsed (AKA age) -- (zeroes ignored)
+age imputed with mean of rows with same extraction_type
 
 Usage:
-dataset = convert_construction_year(dataset)
+dataset = impute_age(dataset)
 """
-
-def inpute_construction_year_2(df):
-    df['construction_year'] = df['construction_year'].replace({0:np.nan})
-    df.construction_year.isna().sum()
-    extraction_type = df[["construction_year","extraction_type"]]
-    extraction_type = extraction_type.groupby(['extraction_type']).mean()
-    extraction_type = extraction_type.reset_index()
-    for i in range(0, len(df)): 
-        if m.isnan(df.construction_year[i]) == True: 
-            df.construction_year[i] =extraction_type.construction_year[ extraction_type.extraction_type == df.extraction_type[i]]
-    return df
+def impute_age(dataset):
+    dataset = flag_impute(dataset,'age')
+    mean = dataset['age'].mean()    
+    def impute_age(row):
+        if row['age'] == 0:
+            row['age'] = mean
+        return row
+    dataset = dataset.apply(impute_age, axis=1)
+    assert(len(dataset[dataset['age'] == 0]) == 0)
+    print("`age` imputed with mean of rows with same extraction_type  \n")
+    return dataset
 
 
 """
@@ -233,15 +231,15 @@ Usage:
 dataset = convert_date_recorded(dataset)
 """
 def convert_date_recorded(dataset):
-    def day_convert(x):
-        if x != 0:
-            return (now - pd.to_datetime(x)).days
+    dataset = flag_impute(dataset, 'date_recorded')
+    dataset["days_since_recoreded"] = 0
+    def day_convert(row):
+        if row["days_since_recoreded"] != 0:
+            return (now - pd.to_datetime(row["days_since_recoreded"])).days
         else:
-            return x
+            return row["days_since_recoreded"]
 
-    dataset["days_since_recoreded"] = dataset.date_recorded.map(day_convert)
-    dataset = dataset.drop(columns=["date_recorded"])
-    assert (not bool(set(["date_recorded"]) & set(dataset.columns)))
+    dataset = dataset.apply(day_convert)
     print("`date_recorded` converted to `days_since_recoreded`, which is elapsed days (zeroes ignored) \n")
     return dataset
 
@@ -358,25 +356,6 @@ def impute_column(dataset, column):
     print("{} imputed with mean".format(column))
     return dataset
 
-"""
-Impute construction year with the max of median, or mean, or date recorded in (years)
-
-Usage:
-train_data = impute_construction_year(train_data)
-"""
-def impute_construction_year(dataset):
-    median = np.median(dataset['age'][dataset['age'] != 0])
-    mean = np.mean(dataset['age'][dataset['age'] != 0])
-
-    def impute_age(row, mean, median):
-        if row['age'] == 0 :
-                row['age'] = max(mean, median, row['days_since_recoreded'] / 365 )
-        return row
-
-    dataset = dataset.apply(lambda row: impute_age(row, mean, median), axis=1)
-    assert(len(dataset[dataset['age'] == 0]) == 0)
-    print("age imputed mean")
-    return dataset
 
 
 """
@@ -386,9 +365,10 @@ Usage:
 train_data = density(train_data)
 """
 def density(dataset):
+    dataset['density'] = 0
     tanz_pop = pd.read_csv("other_datasets/Tanzania_pop.csv", delimiter=';')
     dataset['region_pop'] = dataset['region'].map(tanz_pop.set_index('Region')['population'])
-    dataset.density = dataset['population'] / dataset['region_pop']
+    dataset['density'] = dataset['population'] / dataset['region_pop']
     del dataset['region_pop']
     print("added density")
     return dataset
