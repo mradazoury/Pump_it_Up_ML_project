@@ -322,6 +322,7 @@ Usage:
 train_data = impute_column(train_data, "latitude")
 """
 def impute_column(dataset, column):
+    dataset[column].replace({0:np.nan})
     subvillage = pd.DataFrame(dataset.groupby('subvillage')[column].mean())
     ward = pd.DataFrame(dataset.groupby('ward')[column].mean())
     lga = pd.DataFrame(dataset.groupby('lga')[column].mean())
