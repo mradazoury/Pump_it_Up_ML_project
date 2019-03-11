@@ -7,6 +7,7 @@ import xgboost as xgb
 from sklearn.linear_model import SGDRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
+from sklearn.preprocessing import LabelBinarizer, RobustScaler, LabelEncoder, scale, MinMaxScaler, PolynomialFeatures
 random_seed = 6666
 
 def numerical_features(df):
@@ -69,17 +70,17 @@ def label_encoder(df):
 
 
 def test_score( dataset , name='test',train_id = False ):
+    
     ### PLease specify the name!!!
     K = KFold(5, random_state  = random_seed)
+    
     to_int = {'functional':1,'non functional':2,'functional needs repair':3}
     to_cat = {1:'functional',2:'non functional',3:'functional needs repair'}
 
-
-    
-    
     y_Train = dataset['status_group'].loc[(dataset['is_test'].isin([0]) )]
     y_Train   = y_Train.replace(to_int).copy()
     dataset = dataset.drop('status_group',axis=1).copy()
+    
     ### Label encode
     dataset = label_encoder(dataset).copy()
     ### Divide test and train 
@@ -93,6 +94,7 @@ def test_score( dataset , name='test',train_id = False ):
     if train_id == False:
         X_Train = X_Train.set_index('id')
         test = test.set_index('id')
+        
     #### Random forest with params from a gridsearch
     RFC  = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
             max_depth=80,  max_leaf_nodes=None,
@@ -107,12 +109,15 @@ def test_score( dataset , name='test',train_id = False ):
     
     #### Refitting on the whole data 
     RFC.fit(X_Train , y_Train)
+    
     ### Predict on our test                 
     predictions = RFC.predict(test)
+    
     ### Save the prediction file with the right format to submit 
     data = {'ID': ID, 'status_group': predictions}
     submit = pd.DataFrame(data=data)
     submit['status_group'] = submit.status_group.replace(to_cat)
     submit.to_csv('predictions/'+name+'.csv', index=False)
+    
     return scores , predictions 
     
