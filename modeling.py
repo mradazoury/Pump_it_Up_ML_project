@@ -1,6 +1,6 @@
 import pandas as pd
 from gplearn.genetic import SymbolicTransformer
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import SVR
 import xgboost as xgb
