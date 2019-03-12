@@ -97,12 +97,13 @@ def test_score( dataset , name='test',train_id = False ):
         test = test.set_index('id')
         
     #### Random forest with params from a gridsearch
-    RFC  = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
-            max_depth=80,  max_leaf_nodes=None,
+    RFC = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
+            max_depth=80, max_features='auto', max_leaf_nodes=None,
             min_impurity_decrease=0.0, min_impurity_split=None,
-            min_samples_leaf=2, min_samples_split=8,
-            min_weight_fraction_leaf=0.0, n_estimators=100, n_jobs=None,
-            oob_score=False, random_state=42, verbose=0, warm_start=False)
+            min_samples_leaf=2, min_samples_split=5,
+            min_weight_fraction_leaf=0.0, n_estimators=200, n_jobs=-1,
+            oob_score=False, random_state=6666, verbose=0,
+            warm_start=False)
                       
     ###Scores from cross val 
     scores = cross_val_score(RFC, X_Train, y_Train,scoring='accuracy', cv=K)
