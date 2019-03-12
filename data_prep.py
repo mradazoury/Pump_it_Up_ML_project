@@ -12,6 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
 from sklearn.model_selection import cross_val_score, cross_val_predict, ShuffleSplit, validation_curve, cross_validate
+
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import LabelBinarizer, RobustScaler, LabelEncoder, scale, MinMaxScaler, PolynomialFeatures
 from sklearn.ensemble import ExtraTreesClassifier
@@ -573,3 +574,26 @@ def clustering(train):
     train['cluster'] = train['cluster'].astype('category',copy=False)
     
     return train 
+"""
+Standarize all categorical columns to binary
+Usage:
+train_data = scaler(train_data) 
+"""
+
+def numerical_features(df):
+    columns = df.columns
+    return df._get_numeric_data().columns
+
+def categorical_features(df):
+    numerical_columns = numerical_features(df)
+    return(list(set(df.columns) - set(numerical_columns)))
+
+def onehot_encode(df):
+    numericals = df.get(numerical_features(df))
+    new_df = numericals.copy()
+    for categorical_column in categorical_features(df):
+        new_df = pd.concat([new_df, 
+                            pd.get_dummies(df[categorical_column], 
+                                           prefix=categorical_column)], 
+                           axis=1)
+    return new_df
