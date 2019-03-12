@@ -8,6 +8,7 @@ from sklearn.linear_model import SGDRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
 from sklearn.preprocessing import LabelBinarizer, RobustScaler, LabelEncoder, scale, MinMaxScaler, PolynomialFeatures
+from vecstack import stacking
 random_seed = 6666
 
 def numerical_features(df):
