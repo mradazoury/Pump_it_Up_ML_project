@@ -7,6 +7,15 @@ There is 3 Main Notebooks that contain all of the work:
 
 The names are pretty self explanatory :)
 
+## Note:
+Most of the modeling and data cleaning functions are imported from the following 2 .py files:
+1. data_prep.py
+2. modeling.py
+
+
+
+
+
 
 ## ML Proj Tasks Tracking (Internal to workgroup)
 
