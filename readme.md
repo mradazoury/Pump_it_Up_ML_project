@@ -8,15 +8,15 @@ There is 3 Main Notebooks that contain all of the work:
 The names are pretty self explanatory :)
 
 
-# ML Proj Tasks
+## ML Proj Tasks Tracking (Internal to workgroup)
 
-## Process
+### Process
 
  - Split Notebooks and take out repeated functions to seperate `.py` files - 70% done
 
-## Data prep
+### Data prep
 
-### DONE
+#### DONE
 
 - contstruction year => binning
 - scheme name
@@ -34,16 +34,16 @@ The names are pretty self explanatory :)
 - public meeting NaN
 - Make sure after shortlisting and hot encoding that all columns exist
 
-## DevOps
+### DevOps
 
 - Set up AWS (Jupyter/Git integrations) - Went with Google Cloud - still having issues
 
-## Clear predactors suggestion - idea
+### Clear predactors suggestion - idea
 
 in 2nd level of stacking add the columns that are CLEAR classifiers to the dataset
 
 
-## Modeling
+### Modeling
 
   - Emily
     - KNN
@@ -55,7 +55,7 @@ in 2nd level of stacking add the columns that are CLEAR classifiers to the datas
     - Random Forest
 
 
-# notes on prepared dataset
+### notes on prepared dataset
 
 - distance is returning the same number
 - district code is converted to float somehow - due to skewness fixing function - commented for now
