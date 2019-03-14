@@ -98,10 +98,10 @@ def test_score( dataset , name='test',train_id = False ):
         
     #### Random forest with params from a gridsearch
     RFC = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
-            max_depth=80, max_features='auto', max_leaf_nodes=None,
+            max_depth=85, max_features='auto', max_leaf_nodes=None,
             min_impurity_decrease=0.0, min_impurity_split=None,
             min_samples_leaf=2, min_samples_split=5,
-            min_weight_fraction_leaf=0.0, n_estimators=200, n_jobs=-1,
+            min_weight_fraction_leaf=0.0, n_estimators=230, n_jobs=-1,
             oob_score=False, random_state=6666, verbose=0,
             warm_start=False)
                       
@@ -121,5 +121,6 @@ def test_score( dataset , name='test',train_id = False ):
     submit['status_group'] = submit.status_group.replace(to_cat)
     submit.to_csv('predictions/'+name+'.csv', index=False)
     
-    return scores , predictions 
+    
+    return scores , predictions , FEI
     
