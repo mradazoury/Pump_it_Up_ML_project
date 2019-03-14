@@ -1,3 +1,13 @@
+# HOW TO USE
+
+There is 3 Main Notebooks that contain all of the work:
+1. Data Exploration.html/ipynb	
+2. Data Preperation & FE.html/ipynb
+3. Modeling.html/ipynb
+
+The names are pretty self explanatory :)
+
+
 # ML Proj Tasks
 
 ## Process
@@ -15,8 +25,6 @@
 - water quality vs quality group - Do Nothing
 - region and region code - Do Nothing
 - water point type / water point type group - Drop waterpoint_type_group
-
-### Not tackled yet (Feature Engineering)
 - amount_tsh
   - Lots os zeroes - doesn't make sense because if it's functional it can't have 0 "amount of water available to the water point"
   - Impute the `functional/functional needs repair` zeroes with the median of the other amount_tsh that are functional (REVIEW FOR OVERFITTING) - Rafa
