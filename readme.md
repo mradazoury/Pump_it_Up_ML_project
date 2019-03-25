@@ -13,6 +13,8 @@ Most of the modeling and data cleaning functions are imported from the following
 2. modeling.py
 
 
+### The Final Prediction is in the FINAL PREDICTION file 
+
 
 
 
@@ -70,3 +72,5 @@ in 2nd level of stacking add the columns that are CLEAR classifiers to the datas
 - district code is converted to float somehow - due to skewness fixing function - commented for now
 - imputing takes lots of time
 - impute population function commented
+
+

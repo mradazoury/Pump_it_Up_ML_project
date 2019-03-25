@@ -122,5 +122,5 @@ def test_score( dataset , name='test',train_id = False ):
     submit.to_csv('predictions/'+name+'.csv', index=False)
     
     
-    return scores , predictions , FEI
+    return scores , predictions 
     
